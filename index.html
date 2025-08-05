@@ -4,7 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>AppStore by Takunda</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css" />
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4129282381566342" crossorigin="anonymous"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
@@ -15,24 +16,40 @@
     <div class="top-right">Takunda Ngonisa</div>
   </header>
 
-  <main>
-    <div class="search-bar">
-      <input type="text" id="searchInput" placeholder="Search apps...">
-      <button onclick="searchApps()">Search</button>
-    </div>
+  <div class="search-bar">
+    <input type="text" id="searchInput" placeholder="Search apps...">
+    <button onclick="searchApps()">Search</button>
+  </div>
 
-    <div class="upload-section">
-      <input type="password" id="vipPassword" placeholder="Enter password or pay $1">
-      <button onclick="checkUploadAccess()">Unlock Upload</button>
-      <button id="payButton" style="display: none;" onclick="payWithPaynow()">Pay $1 with Paynow</button>
-      <input type="file" id="appFile" accept=".apk,.zip" />
-      <input type="text" id="appName" placeholder="App Name" />
-      <button onclick="uploadApp()">Upload App</button>
-    </div>
+  <!-- AdSense Banner -->
+  <ins class="adsbygoogle"
+       style="display:block; text-align:center;"
+       data-ad-client="ca-pub-4129282381566342"
+       data-ad-slot="8065233750"
+       data-ad-format="auto"
+       data-full-width-responsive="true"></ins>
+  <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
 
-    <div id="appList" class="app-list"></div>
-  </main>
+  <!-- Payment Section -->
+  <div class="pay-section">
+    <h3>Want to upload your app?</h3>
+    <p>Pay only <strong>$1</strong> via Paynow or enter VIP password</p>
+    <input type="text" id="payerName" placeholder="Your Name" />
+    <input type="text" id="payerEmail" placeholder="Your Email" />
+    <input type="text" id="payerPhone" placeholder="Your Phone" />
+    <input type="password" id="vipPassword" placeholder="Or enter VIP password" />
+    <button onclick="unlockUpload()">Unlock Upload</button>
+    <div id="paymentMessage"></div>
+  </div>
 
+  <!-- Upload Form -->
+  <div class="upload-section" id="uploadForm" style="display: none;">
+    <input type="file" id="appFile" accept=".apk,.zip" />
+    <input type="text" id="appName" placeholder="App Name" />
+    <button onclick="uploadApp()">Upload App</button>
+  </div>
+
+  <div id="appList" class="app-list"></div>
   <script src="app.js"></script>
 </body>
 </html>
