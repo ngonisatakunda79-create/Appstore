@@ -4,55 +4,34 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>AppStore by Takunda</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css">
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 </head>
 <body>
   <header>
-    <h1>Takunda Ngonisa</h1>
-    <input type="text" id="searchInput" placeholder="Search apps..." />
-    <button onclick="searchApps()">Search</button>
+    <h1>📱 AppStore</h1>
+    <div class="top-right">Takunda Ngonisa</div>
   </header>
 
-  <main id="app-list">
-    <!-- Sample app card -->
-    <div class="app-card">
-      <h3>Sample App</h3>
-      <p>Short description</p>
-      <a href="https://example.com/app.apk" download>Download</a>
-
-      <div class="rating-section">
-        <p>Rate this app:</p>
-        <button onclick="rateApp(this, 5)">⭐</button>
-        <button onclick="rateApp(this, 4)">⭐</button>
-        <button onclick="rateApp(this, 3)">⭐</button>
-        <button onclick="rateApp(this, 2)">⭐</button>
-        <button onclick="rateApp(this, 1)">⭐</button>
-        <p class="rating-summary">5⭐: 0 | 4⭐: 0 | 3⭐: 0 | 2⭐: 0 | 1⭐: 0</p>
-      </div>
-
-      <div class="comment-section">
-        <input type="text" placeholder="Write a comment..." class="comment-input" />
-        <button onclick="submitComment(this)">Send</button>
-        <ul class="comment-list"></ul>
-      </div>
+  <main>
+    <div class="search-bar">
+      <input type="text" id="searchInput" placeholder="Search apps...">
+      <button onclick="searchApps()">Search</button>
     </div>
+
+    <div class="upload-section">
+      <input type="password" id="vipPassword" placeholder="Enter password or pay $1">
+      <button onclick="checkUploadAccess()">Unlock Upload</button>
+      <button id="payButton" style="display: none;" onclick="payWithPaynow()">Pay $1 with Paynow</button>
+      <input type="file" id="appFile" accept=".apk,.zip" />
+      <input type="text" id="appName" placeholder="App Name" />
+      <button onclick="uploadApp()">Upload App</button>
+    </div>
+
+    <div id="appList" class="app-list"></div>
   </main>
-
-  <section class="upload-section">
-    <h2>Upload Your App</h2>
-    <input type="text" id="vipCode" placeholder="Enter 'dhogo' or pay to upload" />
-    <button onclick="checkUploadAccess()">Continue</button>
-    <div id="uploadArea" style="display:none;">
-      <input type="file" id="fileInput" />
-      <button onclick="uploadApp()">Upload</button>
-    </div>
-    <div class="payment">
-      <p>OR Pay $1 below to unlock:</p>
-      <a href='https://www.paynow.co.zw/Payment/Link/?q=c2VhcmNoPW5nb25pc2F0YWt1bmRhNzklNDBnbWFpbC5jb20mYW1vdW50PTEuMDAmcmVmZXJlbmNlPVVwbG9hZCsxMjMmbD0x' target='_blank'>
-        <img src='https://www.paynow.co.zw/Content/Buttons/Medium_buttons/button_pay-now_medium.png' style='border:0' />
-      </a>
-    </div>
-  </section>
 
   <script src="app.js"></script>
 </body>
