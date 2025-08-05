@@ -1,5 +1,5 @@
 const firebaseConfig = {
-  apiKey: "AIzaSyD9w0...YOUR_API_KEY...",
+  apiKey: "YOUR_FIREBASE_API_KEY",
   authDomain: "your-project.firebaseapp.com",
   projectId: "your-project-id",
   storageBucket: "your-project.appspot.com",
@@ -10,39 +10,103 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-const APP_COLLECTION = 'apps';
-const UPLOAD_PASSWORD = 'dhogo';
+const PAYNOW_KEY = "YOUR_PAYNOW_CONSUMER_KEY";
+const PAYNOW_SECRET = "YOUR_PAYNOW_CONSUMER_SECRET";
+const PAYNOW_URL = "https://api.paynow.co.zw/interface/initiatetransaction"; // used with CORS proxy
+
+const UPLOADCARE_KEY = "f77e2afd69e72fdae840";
+const VIP_PASSWORD = "dhogo";
 let uploadUnlocked = false;
 
-function checkUploadAccess() {
-  const pass = document.getElementById('vipPassword').value;
-  if (pass === UPLOAD_PASSWORD) {
-    alert("VIP Access Granted!");
+async function unlockUpload() {
+  const pass = document.getElementById("vipPassword").value;
+  const name = document.getElementById("payerName").value;
+  const email = document.getElementById("payerEmail").value;
+  const phone = document.getElementById("payerPhone").value;
+
+  if (pass === VIP_PASSWORD) {
+    document.getElementById("uploadForm").style.display = "block";
+    document.getElementById("paymentMessage").innerText = "✅ VIP Access Granted";
     uploadUnlocked = true;
-  } else {
-    document.getElementById("payButton").style.display = "inline-block";
+    return;
+  }
+
+  if (!name || !email || !phone) {
+    return alert("Please fill in your name, email, and phone to pay.");
+  }
+
+  // Initiate payment request
+  const payload = new URLSearchParams();
+  payload.append("id", PAYNOW_KEY);
+  payload.append("key", PAYNOW_SECRET);
+  payload.append("reference", `APPUPLOAD-${Date.now()}`);
+  payload.append("amount", "1");
+  payload.append("additionalinfo", "App Store Upload");
+  payload.append("returnurl", "https://yourdomain.com/success"); // optional
+  payload.append("resulturl", "https://yourdomain.com/result"); // optional
+  payload.append("authemail", email);
+  payload.append("status", "Message");
+  payload.append("buyer_email", email);
+  payload.append("buyer_name", name);
+  payload.append("buyer_phone", phone);
+
+  try {
+    const res = await fetch("https://corsproxy.io/?" + PAYNOW_URL, {
+      method: "POST",
+      headers: {"Content-Type": "application/x-www-form-urlencoded"},
+      body: payload
+    });
+
+    const text = await res.text();
+    const status = new URLSearchParams(text);
+
+    if (status.get("status") === "Ok") {
+      const payUrl = status.get("browserurl");
+      const pollUrl = status.get("pollurl");
+
+      window.open(payUrl, "_blank");
+
+      // Poll for confirmation every 5 seconds
+      const interval = setInterval(async () => {
+        const check = await fetch("https://corsproxy.io/?" + pollUrl);
+        const resultText = await check.text();
+        const result = new URLSearchParams(resultText);
+
+        if (result.get("status") === "Paid") {
+          clearInterval(interval);
+          uploadUnlocked = true;
+          document.getElementById("uploadForm").style.display = "block";
+          document.getElementById("paymentMessage").innerText = "✅ Payment Verified. Upload unlocked.";
+
+          // Save payment log
+          await db.collection("payments").add({
+            name, email, phone,
+            transaction: result.get("reference"),
+            amount: 1,
+            status: "Paid",
+            date: new Date()
+          });
+        }
+      }, 5000);
+    } else {
+      document.getElementById("paymentMessage").innerText = "❌ Payment failed to initiate.";
+    }
+  } catch (err) {
+    console.error(err);
+    document.getElementById("paymentMessage").innerText = "❌ Error connecting to Paynow.";
   }
 }
 
-function payWithPaynow() {
-  window.open("https://www.paynow.co.zw/Payment/Link/?q=c2VhcmNoPW5nb25pc2E=", "_blank");
-  alert("After payment, return and upload your app.");
-  uploadUnlocked = true;
-}
-
 async function uploadApp() {
-  if (!uploadUnlocked) return alert("Pay $1 or enter VIP password first.");
+  if (!uploadUnlocked) return alert("Pay first or enter VIP password");
 
-  const fileInput = document.getElementById('appFile');
-  const name = document.getElementById('appName').value;
-  const file = fileInput.files[0];
+  const file = document.getElementById("appFile").files[0];
+  const name = document.getElementById("appName").value;
+  if (!file || !name) return alert("Please fill in all fields");
 
-  if (!file || !name) return alert("Fill in all fields.");
-
-  // Upload to Uploadcare
   const formData = new FormData();
   formData.append("UPLOADCARE_STORE", "1");
-  formData.append("UPLOADCARE_PUB_KEY", "f77e2afd69e72fdae840");
+  formData.append("UPLOADCARE_PUB_KEY", UPLOADCARE_KEY);
   formData.append("file", file);
 
   const res = await fetch("https://upload.uploadcare.com/base/", {
@@ -53,14 +117,15 @@ async function uploadApp() {
   const data = await res.json();
   const fileUrl = `https://ucarecdn.com/${data.file}/`;
 
-  await db.collection(APP_COLLECTION).add({
-    name: name,
+  await db.collection("apps").add({
+    name,
     downloadURL: fileUrl,
     ratings: {1:0,2:0,3:0,4:0,5:0},
-    comments: []
+    comments: [],
+    timestamp: new Date()
   });
 
-  alert("App uploaded!");
+  alert("✅ App uploaded!");
   window.location.reload();
 }
 
@@ -91,22 +156,24 @@ function loadApps(apps = null) {
     list.appendChild(div);
   };
 
+  const renderList = (snapshots) => {
+    snapshots.forEach(doc => render(doc, doc.id));
+  };
+
   if (apps) {
-    apps.forEach(doc => render(doc, doc.id));
+    renderList(apps);
   } else {
-    db.collection(APP_COLLECTION).get().then(snapshot => {
-      snapshot.forEach(doc => render(doc, doc.id));
-    });
+    db.collection("apps").get().then(renderList);
   }
 }
 
 function rateApp(appId, rating) {
-  const appRef = db.collection(APP_COLLECTION).doc(appId);
+  const appRef = db.collection("apps").doc(appId);
   appRef.get().then(doc => {
     const ratings = doc.data().ratings;
     ratings[rating] = (ratings[rating] || 0) + 1;
     appRef.update({ratings});
-    alert(`Thanks for rating ${rating} star(s)!`);
+    alert(`Thanks for rating ${rating}★`);
   });
 }
 
@@ -115,19 +182,19 @@ function addComment(appId) {
   const text = input.value.trim();
   if (!text) return;
 
-  const appRef = db.collection(APP_COLLECTION).doc(appId);
+  const appRef = db.collection("apps").doc(appId);
   appRef.get().then(doc => {
     const comments = doc.data().comments || [];
     comments.push(text);
     appRef.update({comments});
     input.value = "";
-    loadApps(); // Refresh comments
+    loadApps();
   });
 }
 
 function searchApps() {
   const term = document.getElementById('searchInput').value.toLowerCase();
-  db.collection(APP_COLLECTION).get().then(snapshot => {
+  db.collection("apps").get().then(snapshot => {
     const filtered = snapshot.docs.filter(doc => doc.data().name.toLowerCase().includes(term));
     loadApps(filtered);
   });
