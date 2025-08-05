@@ -1,1 +1,37 @@
-y
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Takunda AppStore</title>
+  <link rel="stylesheet" href="style.css" />
+  <script>
+    UPLOADCARE_PUBLIC_KEY = 'f77e2afd69e72fdae840';
+  </script>
+  <script src="https://ucarecdn.com/libs/widget/3.x/uploadcare.full.min.js"></script>
+  <script type="module" src="app.js" defer></script>
+</head>
+<body>
+  <header>
+    <h1>📱 Takunda Ngonisa AppStore</h1>
+  </header>
+
+  <main>
+    <section id="authSection">
+      <p><strong>To upload:</strong> Pay $1 to <code>0711663853</code> or enter VIP password:</p>
+      <input type="password" id="vipPassword" placeholder="Enter VIP password..." />
+      <button id="checkVip">Unlock Upload</button>
+    </section>
+
+    <section id="uploadSection" class="hidden">
+      <h2>Upload Your App</h2>
+      <input type="text" id="appTitle" placeholder="App Title" />
+      <input type="hidden" role="uploadcare-uploader" data-clearable />
+      <button id="submitApp">Submit App</button>
+    </section>
+
+    <h2>Latest Apps</h2>
+    <div id="appList" class="app-container"></div>
+  </main>
+</body>
+</html>
