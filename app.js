@@ -1,28 +1,7 @@
 let map, userMarker, destinationMarker, routingControl;
 let userPanned = false;
 
-// VIP password unlock
-document.getElementById("vipBtn").addEventListener("click", () => {
-    const form = document.getElementById("vipForm");
-    form.style.display = form.style.display === "none" ? "block" : "none";
-    document.getElementById("vipInput").focus();
-});
-
-document.getElementById("submitVIP").addEventListener("click", checkPassword);
-document.getElementById("vipInput").addEventListener("keyup", function(e) { if(e.key==="Enter") checkPassword(); });
-
-function checkPassword() {
-    const input = document.getElementById("vipInput").value.trim();
-    const message = document.getElementById("message");
-
-    if (input.toLowerCase() === "ngonisa") {
-        message.textContent = "Password accepted! Map unlocked.";
-        document.getElementById("vipForm").style.display = "none";
-        unlockMap();
-    } else {
-        message.textContent = "Incorrect password.";
-    }
-}
+// ... VIP password code stays the same
 
 function unlockMap() {
     if (!navigator.geolocation) { alert("Geolocation not supported."); return; }
@@ -38,13 +17,11 @@ function unlockMap() {
             scrollWheelZoom: true
         }).setView([lat, lng], 17);
 
-        // OpenStreetMap tiles (with place names)
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
             attribution: '© OpenStreetMap'
         }).addTo(map);
 
-        // User marker
         userMarker = L.marker([lat, lng], {
             title: "You",
             icon: L.icon({
@@ -53,7 +30,27 @@ function unlockMap() {
             })
         }).addTo(map);
 
-        // Click to set destination
+        // Center on me button
+        const centerBtn = L.control({position: 'topleft'});
+        centerBtn.onAdd = function() {
+            const div = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
+            div.innerHTML = '📍';
+            div.style.backgroundColor = 'white';
+            div.style.width = '34px';
+            div.style.height = '34px';
+            div.style.fontSize = '20px';
+            div.style.textAlign = 'center';
+            div.style.cursor = 'pointer';
+            div.title = "Center on me";
+            div.onclick = () => {
+                map.setView(userMarker.getLatLng(), 17);
+                userPanned = false;
+            };
+            return div;
+        };
+        centerBtn.addTo(map);
+
+        // Click for destination
         map.on('click', function(e) {
             const destLat = e.latlng.lat;
             const destLng = e.latlng.lng;
@@ -89,6 +86,7 @@ function unlockMap() {
 
             userMarker.setLatLng([newLat, newLng]);
 
+            // Only auto-pan if user hasn't manually moved or zoomed
             if(!userPanned) map.panTo([newLat, newLng], {animate:true});
 
             if(routingControl && destinationMarker) {
@@ -100,6 +98,7 @@ function unlockMap() {
 
         }, (err) => alert("Error getting location: " + err.message), {enableHighAccuracy:true, maximumAge:0, timeout:5000});
 
+        // Detect manual pan/zoom
         map.on('dragstart', () => userPanned = true);
         map.on('zoomstart', () => userPanned = true);
 
