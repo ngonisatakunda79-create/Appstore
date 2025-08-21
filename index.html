@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Green Flag Tracker with Voucher</title>
+    <title>Green Flag Tracker with Firebase Voucher</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
     <style>
         body, html { margin:0; padding:0; height:100%; }
@@ -106,9 +106,26 @@
 
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+    <!-- Firebase JS -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js"></script>
+
     <script>
         let map, userMarker;
         let lastVoucher = ""; // store last entered voucher
+
+        // Firebase config
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "YOUR_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
 
         // Toggle voucher input form
         document.getElementById("voucherBtn").addEventListener("click", () => {
@@ -121,15 +138,30 @@
             const input = document.getElementById("voucherInput").value.trim();
             const message = document.getElementById("message");
 
-            lastVoucher = input; // store voucher
-
-            if (input.toLowerCase() === "ngonisa") {
+            if (input.toLowerCase() === "ngonisa") { // VIP password
+                lastVoucher = input;
                 unlockMap();
-            } else if (/^1\d{7}$/.test(input)) { // demo voucher pattern
-                unlockMap();
-            } else {
-                message.textContent = "Invalid voucher or password.";
+                message.textContent = "VIP password accepted!";
+                return;
             }
+
+            // Check Firestore for voucher
+            db.collection("vouchers").doc(input).get().then((doc) => {
+                if (doc.exists && !doc.data().used) {
+                    lastVoucher = input;
+                    unlockMap();
+                    message.textContent = "Voucher accepted!";
+                    // Mark voucher as used
+                    db.collection("vouchers").doc(input).update({
+                        used: true,
+                        redeemedAt: new Date().toISOString()
+                    });
+                } else {
+                    message.textContent = "Invalid or already used voucher.";
+                }
+            }).catch((error) => {
+                message.textContent = "Error checking voucher: " + error.message;
+            });
         }
 
         // Unlock map and start GPS tracking
