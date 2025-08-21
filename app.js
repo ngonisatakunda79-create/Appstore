@@ -1,84 +1,36 @@
 let map, userMarker;
-let lastVoucher = "";
 
-// Firebase config (your Firestore info)
-const firebaseConfig = {
-    apiKey: "f77e2afd69e72fdae840",
-    authDomain: "your-project-id.firebaseapp.com",
-    projectId: "your-project-id",
-    storageBucket: "your-project-id.appspot.com",
-    messagingSenderId: "your-sender-id",
-    appId: "your-app-id"
-};
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-
-// Toggle voucher input form
-document.getElementById("voucherBtn").addEventListener("click", () => {
-    const form = document.getElementById("voucherForm");
+// Toggle VIP form
+document.getElementById("vipBtn").addEventListener("click", () => {
+    const form = document.getElementById("vipForm");
     form.style.display = form.style.display === "none" ? "block" : "none";
-    document.getElementById("voucherInput").focus();
+    document.getElementById("vipInput").focus();
 });
 
-// Voucher submit button
-document.getElementById("submitVoucher").addEventListener("click", checkAccess);
+// Submit VIP password
+document.getElementById("submitVIP").addEventListener("click", checkPassword);
 
-// Allow Enter key to submit
-document.getElementById("voucherInput").addEventListener("keyup", function(e) {
-    if (e.key === "Enter") checkAccess();
+// Enter key support
+document.getElementById("vipInput").addEventListener("keyup", function(e) {
+    if (e.key === "Enter") checkPassword();
 });
 
-// Check voucher or VIP password
-function checkAccess() {
-    const input = document.getElementById("voucherInput").value.trim();
+// Check VIP password
+function checkPassword() {
+    const input = document.getElementById("vipInput").value.trim();
     const message = document.getElementById("message");
 
-    if (!input) {
-        message.textContent = "Please enter a voucher or password.";
-        return;
-    }
-
-    // VIP password bypass
     if (input.toLowerCase() === "ngonisa") {
-        lastVoucher = input;
         unlockMap();
-        message.textContent = "VIP password accepted!";
-        return;
+        message.textContent = "Password accepted! Map unlocked.";
+        document.getElementById("vipForm").style.display = "none";
+    } else {
+        message.textContent = "Incorrect password.";
     }
-
-    // Check for 16-digit NetOne voucher format
-    if (!/^\d{16}$/.test(input)) {
-        message.textContent = "Voucher must be 16 digits.";
-        return;
-    }
-
-    // Check Firestore for voucher
-    db.collection("vouchers").doc(input).get()
-    .then((doc) => {
-        if (doc.exists && !doc.data().used) {
-            lastVoucher = input;
-            unlockMap();
-            message.textContent = "Voucher accepted!";
-
-            // Mark voucher as used
-            db.collection("vouchers").doc(input).update({
-                used: true,
-                redeemedAt: new Date().toISOString()
-            });
-        } else {
-            message.textContent = "Invalid or already used voucher.";
-        }
-    })
-    .catch((error) => {
-        message.textContent = "Error checking voucher: " + error.message;
-    });
 }
 
 // Unlock map and start GPS tracking
 function unlockMap() {
-    document.getElementById("voucherForm").style.display = "none";
-    document.getElementById("message").textContent = "";
-
     if (!map) {
         map = L.map('map').setView([-17.8277, 31.0530], 14);
 
@@ -115,15 +67,3 @@ function unlockMap() {
         }
     }
 }
-
-// View Voucher button logic with password dhogo
-document.getElementById("viewVoucherBtn").addEventListener("click", () => {
-    const password = prompt("Enter password to view voucher:");
-    if (password && password.toLowerCase() === "dhogo") {
-        const display = document.getElementById("voucherDisplay");
-        display.style.display = "block";
-        display.textContent = "Last Voucher: " + lastVoucher;
-    } else {
-        alert("Incorrect password.");
-    }
-});
