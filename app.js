@@ -1,4 +1,4 @@
-let map, userMarker;
+let map, userMarker, destinationMarker, routingControl;
 
 // Toggle VIP form
 document.getElementById("vipBtn").addEventListener("click", () => {
@@ -9,13 +9,8 @@ document.getElementById("vipBtn").addEventListener("click", () => {
 
 // Submit VIP password
 document.getElementById("submitVIP").addEventListener("click", checkPassword);
+document.getElementById("vipInput").addEventListener("keyup", function(e) { if(e.key==="Enter") checkPassword(); });
 
-// Enter key support
-document.getElementById("vipInput").addEventListener("keyup", function(e) {
-    if (e.key === "Enter") checkPassword();
-});
-
-// Check VIP password
 function checkPassword() {
     const input = document.getElementById("vipInput").value.trim();
     const message = document.getElementById("message");
@@ -29,47 +24,77 @@ function checkPassword() {
     }
 }
 
-// Unlock map and track real-time location
 function unlockMap() {
-    if (!navigator.geolocation) {
-        alert("Geolocation is not supported by this browser.");
-        return;
-    }
+    if (!navigator.geolocation) { alert("Geolocation not supported."); return; }
 
-    // Get initial position and center map
-    navigator.geolocation.getCurrentPosition((position) => {
-        const lat = position.coords.latitude;
-        const lng = position.coords.longitude;
+    navigator.geolocation.getCurrentPosition((pos) => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
 
-        map = L.map('map').setView([lat, lng], 17); // zoomed in directly on user
+        map = L.map('map').setView([lat, lng], 17);
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
             attribution: '© OpenStreetMap'
         }).addTo(map);
 
-        // Add green flag marker
+        // User marker
         userMarker = L.marker([lat, lng], {
             title: "You",
             icon: L.icon({
                 iconUrl: 'https://upload.wikimedia.org/wikipedia/commons/7/73/Flat_tick_icon_green.svg',
-                iconSize: [25, 25]
+                iconSize: [25,25]
             })
         }).addTo(map);
 
-        // Start continuous tracking
-        navigator.geolocation.watchPosition(
-            (pos) => {
-                const newLat = pos.coords.latitude;
-                const newLng = pos.coords.longitude;
-                userMarker.setLatLng([newLat, newLng]);
-                map.panTo([newLat, newLng], {animate: true});
-            },
-            (err) => alert("Error getting location: " + err.message),
-            { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 }
-        );
+        // Enable user to click on map to set destination
+        map.on('click', function(e) {
+            const destLat = e.latlng.lat;
+            const destLng = e.latlng.lng;
 
-    }, (error) => {
-        alert("Error getting initial location: " + error.message);
-    }, { enableHighAccuracy: true });
+            // Remove previous destination if exists
+            if(destinationMarker) map.removeLayer(destinationMarker);
+
+            // Add new destination marker
+            destinationMarker = L.marker([destLat, destLng], {
+                title: "Destination",
+                icon: L.icon({
+                    iconUrl: 'https://upload.wikimedia.org/wikipedia/commons/3/38/Red_flag_icon.svg',
+                    iconSize: [25,25]
+                })
+            }).addTo(map);
+
+            // Add route from user to destination
+            if(routingControl) map.removeControl(routingControl);
+            routingControl = L.Routing.control({
+                waypoints: [
+                    L.latLng(userMarker.getLatLng().lat, userMarker.getLatLng().lng),
+                    L.latLng(destLat, destLng)
+                ],
+                routeWhileDragging: false,
+                addWaypoints: false,
+                draggableWaypoints: false,
+                createMarker: function() { return null; }
+            }).addTo(map);
+        });
+
+        // Continuous user location tracking
+        navigator.geolocation.watchPosition((p) => {
+            const newLat = p.coords.latitude;
+            const newLng = p.coords.longitude;
+
+            userMarker.setLatLng([newLat, newLng]);
+            map.panTo([newLat, newLng], {animate:true});
+
+            // Update route dynamically
+            if(routingControl && destinationMarker) {
+                routingControl.setWaypoints([
+                    L.latLng(newLat, newLng),
+                    L.latLng(destinationMarker.getLatLng().lat, destinationMarker.getLatLng().lng)
+                ]);
+            }
+
+        }, (err) => alert("Error getting location: " + err.message), {enableHighAccuracy:true, maximumAge:0, timeout:5000});
+
+    }, (err) => alert("Error getting initial location: " + err.message), {enableHighAccuracy:true});
 }
