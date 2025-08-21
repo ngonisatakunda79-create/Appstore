@@ -1,3 +1,30 @@
+let map, userMarker, destinationMarker, routingControl;
+let userPanned = false; // track if user manually pans
+
+// Toggle VIP form
+document.getElementById("vipBtn").addEventListener("click", () => {
+    const form = document.getElementById("vipForm");
+    form.style.display = form.style.display === "none" ? "block" : "none";
+    document.getElementById("vipInput").focus();
+});
+
+// Submit VIP password
+document.getElementById("submitVIP").addEventListener("click", checkPassword);
+document.getElementById("vipInput").addEventListener("keyup", function(e) { if(e.key==="Enter") checkPassword(); });
+
+function checkPassword() {
+    const input = document.getElementById("vipInput").value.trim();
+    const message = document.getElementById("message");
+
+    if (input.toLowerCase() === "ngonisa") {
+        message.textContent = "Password accepted! Map unlocked.";
+        document.getElementById("vipForm").style.display = "none";
+        unlockMap();
+    } else {
+        message.textContent = "Incorrect password.";
+    }
+}
+
 function unlockMap() {
     if (!navigator.geolocation) { alert("Geolocation not supported."); return; }
 
@@ -5,10 +32,10 @@ function unlockMap() {
         const lat = pos.coords.latitude;
         const lng = pos.coords.longitude;
 
-        // Initialize map with zoom & drag enabled
+        // Initialize map
         map = L.map('map', {
-            zoomControl: true,   // zoom buttons
-            dragging: true,      // allow dragging
+            zoomControl: true,
+            dragging: true,
             doubleClickZoom: true,
             scrollWheelZoom: true
         }).setView([lat, lng], 17);
@@ -27,7 +54,7 @@ function unlockMap() {
             })
         }).addTo(map);
 
-        // Allow user to click on map for destination
+        // Click to add destination
         map.on('click', function(e) {
             const destLat = e.latlng.lat;
             const destLng = e.latlng.lng;
@@ -55,18 +82,17 @@ function unlockMap() {
             }).addTo(map);
         });
 
-        // Continuous user location tracking
+        // Track user location
         navigator.geolocation.watchPosition((p) => {
             const newLat = p.coords.latitude;
             const newLng = p.coords.longitude;
 
             userMarker.setLatLng([newLat, newLng]);
 
-            // Only pan if user is not manually moving map
-            if(!map._userPanned) {
-                map.panTo([newLat, newLng], {animate:true});
-            }
+            // Only auto-pan if user hasn't manually moved map
+            if(!userPanned) map.panTo([newLat, newLng], {animate:true});
 
+            // Update route dynamically
             if(routingControl && destinationMarker) {
                 routingControl.setWaypoints([
                     L.latLng(newLat, newLng),
@@ -76,9 +102,9 @@ function unlockMap() {
 
         }, (err) => alert("Error getting location: " + err.message), {enableHighAccuracy:true, maximumAge:0, timeout:5000});
 
-        // Detect manual pan by user
-        map.on('dragstart', () => map._userPanned = true);
-        map.on('zoomstart', () => map._userPanned = true);
+        // Detect manual pan/zoom
+        map.on('dragstart', () => userPanned = true);
+        map.on('zoomstart', () => userPanned = true);
 
     }, (err) => alert("Error getting initial location: " + err.message), {enableHighAccuracy:true});
 }
