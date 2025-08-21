@@ -6,32 +6,22 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 </head>
 <body>
-    <!-- Voucher / VIP Button -->
-    <button id="voucherBtn">$ Voucher / VIP</button>
+    <!-- VIP Password Button -->
+    <button id="vipBtn">Enter VIP Password</button>
 
-    <!-- Voucher Input Popup -->
-    <div id="voucherForm">
-        <h3>Enter Voucher or VIP Password</h3>
-        <input type="text" id="voucherInput" placeholder="16-digit voucher or 'ngonisa'">
-        <button id="submitVoucher">Unlock Map</button>
+    <!-- Password Input Popup -->
+    <div id="vipForm">
+        <h3>Enter VIP Password</h3>
+        <input type="text" id="vipInput" placeholder="Enter password">
+        <button id="submitVIP">Unlock Map</button>
         <p id="message"></p>
     </div>
-
-    <!-- View Voucher Button -->
-    <button id="viewVoucherBtn">View Last Voucher</button>
-
-    <!-- Voucher Display -->
-    <div id="voucherDisplay"></div>
 
     <!-- Map -->
     <div id="map"></div>
 
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-
-    <!-- Firebase JS -->
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js"></script>
 
     <!-- App JS -->
     <script src="app.js"></script>
