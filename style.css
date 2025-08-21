@@ -1,23 +1,84 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Real-Time Route Tracker</title>
-    <link rel="stylesheet" href="style.css"/>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css"/>
-</head>
-<body>
-    <button id="vipBtn">Enter VIP Password</button>
-    <div id="vipForm">
-        <h3>Enter VIP Password</h3>
-        <input type="text" id="vipInput" placeholder="Enter password">
-        <button id="submitVIP">Unlock Map</button>
-        <p id="message"></p>
-    </div>
-    <div id="map"></div>
+/* General body and map */
+body, html { 
+    margin: 0; 
+    padding: 0; 
+    height: 100%; 
+    font-family: Arial, sans-serif; 
+}
+#map { 
+    height: 100%; 
+    width: 100%; 
+}
 
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-    <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
-    <script src="app.js"></script>
-</body>
-</html>
+/* VIP Password Button */
+#vipBtn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 1000;
+    background: #4CAF50;
+    color: white;
+    border: none;
+    padding: 12px 18px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+}
+
+/* VIP Password Form Popup */
+#vipForm {
+    display: none;
+    position: absolute;
+    top: 60px;
+    right: 10px;
+    width: 240px;
+    background: #fff;
+    padding: 15px;
+    border-radius: 10px;
+    z-index: 1000;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+}
+
+#vipForm h3 {
+    margin-top: 0;
+    font-size: 16px;
+    color: #333;
+    text-align: center;
+}
+
+#vipForm input {
+    width: 100%;
+    padding: 8px;
+    margin: 8px 0;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-sizing: border-box;
+}
+
+#vipForm button {
+    width: 100%;
+    padding: 8px;
+    background: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+#vipForm button:hover {
+    background: #45a049;
+}
+
+#message {
+    color: red;
+    font-size: 13px;
+    margin-top: 5px;
+    text-align: center;
+}
+
+/* Optional: Make leaflet routing line thicker */
+.leaflet-routing-container {
+    font-size: 12px;
+}
