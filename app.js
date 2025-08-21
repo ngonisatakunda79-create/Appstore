@@ -1,29 +1,3 @@
-let map, userMarker, destinationMarker, routingControl;
-
-// Toggle VIP form
-document.getElementById("vipBtn").addEventListener("click", () => {
-    const form = document.getElementById("vipForm");
-    form.style.display = form.style.display === "none" ? "block" : "none";
-    document.getElementById("vipInput").focus();
-});
-
-// Submit VIP password
-document.getElementById("submitVIP").addEventListener("click", checkPassword);
-document.getElementById("vipInput").addEventListener("keyup", function(e) { if(e.key==="Enter") checkPassword(); });
-
-function checkPassword() {
-    const input = document.getElementById("vipInput").value.trim();
-    const message = document.getElementById("message");
-
-    if (input.toLowerCase() === "ngonisa") {
-        message.textContent = "Password accepted! Map unlocked.";
-        document.getElementById("vipForm").style.display = "none";
-        unlockMap();
-    } else {
-        message.textContent = "Incorrect password.";
-    }
-}
-
 function unlockMap() {
     if (!navigator.geolocation) { alert("Geolocation not supported."); return; }
 
@@ -31,7 +5,13 @@ function unlockMap() {
         const lat = pos.coords.latitude;
         const lng = pos.coords.longitude;
 
-        map = L.map('map').setView([lat, lng], 17);
+        // Initialize map with zoom & drag enabled
+        map = L.map('map', {
+            zoomControl: true,   // zoom buttons
+            dragging: true,      // allow dragging
+            doubleClickZoom: true,
+            scrollWheelZoom: true
+        }).setView([lat, lng], 17);
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
@@ -47,15 +27,13 @@ function unlockMap() {
             })
         }).addTo(map);
 
-        // Enable user to click on map to set destination
+        // Allow user to click on map for destination
         map.on('click', function(e) {
             const destLat = e.latlng.lat;
             const destLng = e.latlng.lng;
 
-            // Remove previous destination if exists
             if(destinationMarker) map.removeLayer(destinationMarker);
 
-            // Add new destination marker
             destinationMarker = L.marker([destLat, destLng], {
                 title: "Destination",
                 icon: L.icon({
@@ -64,7 +42,6 @@ function unlockMap() {
                 })
             }).addTo(map);
 
-            // Add route from user to destination
             if(routingControl) map.removeControl(routingControl);
             routingControl = L.Routing.control({
                 waypoints: [
@@ -84,9 +61,12 @@ function unlockMap() {
             const newLng = p.coords.longitude;
 
             userMarker.setLatLng([newLat, newLng]);
-            map.panTo([newLat, newLng], {animate:true});
 
-            // Update route dynamically
+            // Only pan if user is not manually moving map
+            if(!map._userPanned) {
+                map.panTo([newLat, newLng], {animate:true});
+            }
+
             if(routingControl && destinationMarker) {
                 routingControl.setWaypoints([
                     L.latLng(newLat, newLng),
@@ -95,6 +75,10 @@ function unlockMap() {
             }
 
         }, (err) => alert("Error getting location: " + err.message), {enableHighAccuracy:true, maximumAge:0, timeout:5000});
+
+        // Detect manual pan by user
+        map.on('dragstart', () => map._userPanned = true);
+        map.on('zoomstart', () => map._userPanned = true);
 
     }, (err) => alert("Error getting initial location: " + err.message), {enableHighAccuracy:true});
 }
