@@ -1,14 +1,13 @@
 let map, userMarker, destinationMarker, routingControl;
-let userPanned = false; // track if user manually pans
+let userPanned = false;
 
-// Toggle VIP form
+// VIP password unlock
 document.getElementById("vipBtn").addEventListener("click", () => {
     const form = document.getElementById("vipForm");
     form.style.display = form.style.display === "none" ? "block" : "none";
     document.getElementById("vipInput").focus();
 });
 
-// Submit VIP password
 document.getElementById("submitVIP").addEventListener("click", checkPassword);
 document.getElementById("vipInput").addEventListener("keyup", function(e) { if(e.key==="Enter") checkPassword(); });
 
@@ -32,7 +31,6 @@ function unlockMap() {
         const lat = pos.coords.latitude;
         const lng = pos.coords.longitude;
 
-        // Initialize map
         map = L.map('map', {
             zoomControl: true,
             dragging: true,
@@ -40,6 +38,7 @@ function unlockMap() {
             scrollWheelZoom: true
         }).setView([lat, lng], 17);
 
+        // OpenStreetMap tiles (with place names)
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
             attribution: '© OpenStreetMap'
@@ -54,7 +53,7 @@ function unlockMap() {
             })
         }).addTo(map);
 
-        // Click to add destination
+        // Click to set destination
         map.on('click', function(e) {
             const destLat = e.latlng.lat;
             const destLng = e.latlng.lng;
@@ -75,6 +74,7 @@ function unlockMap() {
                     L.latLng(userMarker.getLatLng().lat, userMarker.getLatLng().lng),
                     L.latLng(destLat, destLng)
                 ],
+                lineOptions: {styles:[{color:'red',opacity:0.9,weight:6}]},
                 routeWhileDragging: false,
                 addWaypoints: false,
                 draggableWaypoints: false,
@@ -89,10 +89,8 @@ function unlockMap() {
 
             userMarker.setLatLng([newLat, newLng]);
 
-            // Only auto-pan if user hasn't manually moved map
             if(!userPanned) map.panTo([newLat, newLng], {animate:true});
 
-            // Update route dynamically
             if(routingControl && destinationMarker) {
                 routingControl.setWaypoints([
                     L.latLng(newLat, newLng),
@@ -102,7 +100,6 @@ function unlockMap() {
 
         }, (err) => alert("Error getting location: " + err.message), {enableHighAccuracy:true, maximumAge:0, timeout:5000});
 
-        // Detect manual pan/zoom
         map.on('dragstart', () => userPanned = true);
         map.on('zoomstart', () => userPanned = true);
 
