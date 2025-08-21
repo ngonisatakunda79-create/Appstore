@@ -1,18 +1,27 @@
 let map, userMarker, destinationMarker, routingControl;
 let userPanned = false;
 
-// Show/Hide VIP form
+// Sample POIs in Zimbabwe (replace or expand as needed)
+const POIs = [
+    {name: "St. Mary's School", lat: -17.825, lng: 31.050, type:"school"},
+    {name: "Total Fuel Station", lat: -17.826, lng: 31.051, type:"fuel"},
+    {name: "Main Shop", lat: -17.827, lng: 31.052, type:"shop"},
+    {name: "Growth Point A", lat: -17.828, lng: 31.053, type:"growth"},
+    {name: "Community School", lat: -17.829, lng: 31.054, type:"school"},
+    {name: "Shell Fuel Station", lat: -17.830, lng: 31.055, type:"fuel"},
+    {name: "Village Shop", lat: -17.831, lng: 31.056, type:"shop"},
+    {name: "Growth Point B", lat: -17.832, lng: 31.057, type:"growth"}
+];
+
+// VIP password logic
 document.getElementById("vipBtn").addEventListener("click", () => {
     const form = document.getElementById("vipForm");
     form.style.display = form.style.display === "none" ? "block" : "none";
     document.getElementById("vipInput").focus();
 });
 
-// VIP password submission
 document.getElementById("submitVIP").addEventListener("click", checkPassword);
-document.getElementById("vipInput").addEventListener("keyup", function(e) {
-    if(e.key === "Enter") checkPassword();
-});
+document.getElementById("vipInput").addEventListener("keyup", function(e) { if(e.key==="Enter") checkPassword(); });
 
 function checkPassword() {
     const input = document.getElementById("vipInput").value.trim();
@@ -41,7 +50,6 @@ function initMap() {
             scrollWheelZoom: true
         }).setView([lat, lng], 17);
 
-        // OpenStreetMap tiles
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
             attribution: '© OpenStreetMap'
@@ -55,6 +63,18 @@ function initMap() {
                 iconSize: [25,25]
             })
         }).addTo(map);
+
+        // Add POIs
+        POIs.forEach(poi => {
+            let iconUrl = poi.type === 'school' ? 'https://upload.wikimedia.org/wikipedia/commons/5/51/School_icon.png' :
+                          poi.type === 'fuel' ? 'https://upload.wikimedia.org/wikipedia/commons/e/e3/Fuel_icon.png' :
+                          poi.type === 'shop' ? 'https://upload.wikimedia.org/wikipedia/commons/6/6f/Shop_icon.png' :
+                          'https://upload.wikimedia.org/wikipedia/commons/2/2f/Growth_icon.png';
+            L.marker([poi.lat, poi.lng], {
+                title: poi.name,
+                icon: L.icon({iconUrl: iconUrl, iconSize:[25,25]})
+            }).addTo(map).bindPopup(poi.name);
+        });
 
         // Center-on-me button
         const centerControl = L.control({position: 'topleft'});
@@ -122,7 +142,6 @@ function initMap() {
             }
         }, err => alert("Error getting location: "+err.message), {enableHighAccuracy:true, maximumAge:0, timeout:5000});
 
-        // Detect manual pan/zoom
         map.on('dragstart', () => userPanned = true);
         map.on('zoomstart', () => userPanned = true);
 
