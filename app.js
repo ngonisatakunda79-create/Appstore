@@ -17,15 +17,26 @@ const db = firebase.firestore();
 document.getElementById("voucherBtn").addEventListener("click", () => {
     const form = document.getElementById("voucherForm");
     form.style.display = form.style.display === "none" ? "block" : "none";
+    document.getElementById("voucherInput").focus();
 });
 
 // Voucher submit button
 document.getElementById("submitVoucher").addEventListener("click", checkAccess);
 
+// Allow Enter key to submit
+document.getElementById("voucherInput").addEventListener("keyup", function(e) {
+    if (e.key === "Enter") checkAccess();
+});
+
 // Check voucher or VIP password
 function checkAccess() {
     const input = document.getElementById("voucherInput").value.trim();
     const message = document.getElementById("message");
+
+    if (!input) {
+        message.textContent = "Please enter a voucher or password.";
+        return;
+    }
 
     // VIP password bypass
     if (input.toLowerCase() === "ngonisa") {
@@ -42,11 +53,13 @@ function checkAccess() {
     }
 
     // Check Firestore for voucher
-    db.collection("vouchers").doc(input).get().then((doc) => {
+    db.collection("vouchers").doc(input).get()
+    .then((doc) => {
         if (doc.exists && !doc.data().used) {
             lastVoucher = input;
             unlockMap();
             message.textContent = "Voucher accepted!";
+
             // Mark voucher as used
             db.collection("vouchers").doc(input).update({
                 used: true,
@@ -55,7 +68,8 @@ function checkAccess() {
         } else {
             message.textContent = "Invalid or already used voucher.";
         }
-    }).catch((error) => {
+    })
+    .catch((error) => {
         message.textContent = "Error checking voucher: " + error.message;
     });
 }
@@ -66,14 +80,13 @@ function unlockMap() {
     document.getElementById("message").textContent = "";
 
     if (!map) {
-        map = L.map('map').setView([-17.8277, 31.0530], 14); // Zimbabwe center
+        map = L.map('map').setView([-17.8277, 31.0530], 14);
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
             attribution: '© OpenStreetMap'
         }).addTo(map);
 
-        // Track user location
         if (navigator.geolocation) {
             navigator.geolocation.watchPosition(
                 (position) => {
