@@ -1,55 +1,191 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>AppStore by Takunda</title>
-  <link rel="stylesheet" href="style.css" />
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4129282381566342" crossorigin="anonymous"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <title>Green Flag Tracker with Voucher</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+    <style>
+        body, html { margin:0; padding:0; height:100%; }
+        #map { height:100%; width:100%; }
+
+        /* Top-right $ button */
+        #voucherBtn {
+            position:absolute;
+            top:10px;
+            right:10px;
+            z-index:1000;
+            background:#4CAF50;
+            color:white;
+            border:none;
+            padding:10px;
+            border-radius:5px;
+            cursor:pointer;
+            font-weight:bold;
+        }
+
+        /* Voucher input popup */
+        #voucherForm {
+            display:none;
+            position:absolute;
+            top:50px;
+            right:10px;
+            background:white;
+            padding:10px;
+            border-radius:5px;
+            z-index:1000;
+            box-shadow:0 2px 6px rgba(0,0,0,0.3);
+        }
+
+        #voucherForm input {
+            width:160px;
+            padding:5px;
+            margin-bottom:5px;
+        }
+
+        #voucherForm button {
+            padding:5px 10px;
+            background:#4CAF50;
+            color:white;
+            border:none;
+            cursor:pointer;
+        }
+
+        #message {
+            color:red;
+            font-size:12px;
+            margin-top:5px;
+        }
+
+        /* View Voucher Button */
+        #viewVoucherBtn {
+            position:absolute;
+            top:120px;
+            right:10px;
+            z-index:1000;
+            background:#f39c12;
+            color:white;
+            border:none;
+            padding:8px;
+            border-radius:5px;
+            cursor:pointer;
+        }
+
+        /* Voucher Display Box */
+        #voucherDisplay {
+            position:absolute;
+            top:160px;
+            right:10px;
+            background:white;
+            padding:5px;
+            z-index:1000;
+            border-radius:5px;
+            display:none;
+        }
+    </style>
 </head>
 <body>
-  <header>
-    <h1>📱 AppStore</h1>
-    <div class="top-right">Takunda Ngonisa</div>
-  </header>
 
-  <div class="search-bar">
-    <input type="text" id="searchInput" placeholder="Search apps...">
-    <button onclick="searchApps()">Search</button>
-  </div>
+    <!-- Voucher Button -->
+    <button id="voucherBtn">$</button>
 
-  <!-- AdSense Banner -->
-  <ins class="adsbygoogle"
-       style="display:block; text-align:center;"
-       data-ad-client="ca-pub-4129282381566342"
-       data-ad-slot="8065233750"
-       data-ad-format="auto"
-       data-full-width-responsive="true"></ins>
-  <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+    <!-- Voucher Input Popup -->
+    <div id="voucherForm">
+        <h4>Enter Voucher / VIP</h4>
+        <input type="text" id="voucherInput" placeholder="Voucher or VIP Password">
+        <button onclick="checkAccess()">Submit</button>
+        <p id="message"></p>
+    </div>
 
-  <!-- Payment Section -->
-  <div class="pay-section">
-    <h3>Want to upload your app?</h3>
-    <p>Pay only <strong>$1</strong> via Paynow or enter VIP password</p>
-    <input type="text" id="payerName" placeholder="Your Name" />
-    <input type="text" id="payerEmail" placeholder="Your Email" />
-    <input type="text" id="payerPhone" placeholder="Your Phone" />
-    <input type="password" id="vipPassword" placeholder="Or enter VIP password" />
-    <button onclick="unlockUpload()">Unlock Upload</button>
-    <div id="paymentMessage"></div>
-  </div>
+    <!-- View Voucher Button -->
+    <button id="viewVoucherBtn">View Voucher</button>
 
-  <!-- Upload Form -->
-  <div class="upload-section" id="uploadForm" style="display: none;">
-    <input type="file" id="appFile" accept=".apk,.zip" />
-    <input type="text" id="appName" placeholder="App Name" />
-    <button onclick="uploadApp()">Upload App</button>
-  </div>
+    <!-- Voucher Display -->
+    <div id="voucherDisplay"></div>
 
-  <div id="appList" class="app-list"></div>
-  <script src="app.js"></script>
+    <!-- Map -->
+    <div id="map"></div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+        let map, userMarker;
+        let lastVoucher = ""; // store last entered voucher
+
+        // Toggle voucher input form
+        document.getElementById("voucherBtn").addEventListener("click", () => {
+            const form = document.getElementById("voucherForm");
+            form.style.display = form.style.display === "none" ? "block" : "none";
+        });
+
+        // Check voucher or VIP password
+        function checkAccess() {
+            const input = document.getElementById("voucherInput").value.trim();
+            const message = document.getElementById("message");
+
+            lastVoucher = input; // store voucher
+
+            if (input.toLowerCase() === "ngonisa") {
+                unlockMap();
+            } else if (/^1\d{7}$/.test(input)) { // demo voucher pattern
+                unlockMap();
+            } else {
+                message.textContent = "Invalid voucher or password.";
+            }
+        }
+
+        // Unlock map and start GPS tracking
+        function unlockMap() {
+            document.getElementById("voucherForm").style.display = "none";
+            document.getElementById("message").textContent = "";
+
+            if (!map) {
+                map = L.map('map').setView([-17.8277, 31.0530], 14); // Zimbabwe center
+
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 19,
+                    attribution: '© OpenStreetMap'
+                }).addTo(map);
+
+                // Track user location
+                if (navigator.geolocation) {
+                    navigator.geolocation.watchPosition(
+                        (position) => {
+                            const lat = position.coords.latitude;
+                            const lng = position.coords.longitude;
+
+                            if (!userMarker) {
+                                userMarker = L.marker([lat, lng], {
+                                    title: "You",
+                                    icon: L.icon({
+                                        iconUrl: 'https://upload.wikimedia.org/wikipedia/commons/7/73/Flat_tick_icon_green.svg',
+                                        iconSize: [25, 25]
+                                    })
+                                }).addTo(map);
+                                map.setView([lat, lng], 16);
+                            } else {
+                                userMarker.setLatLng([lat, lng]);
+                                map.panTo([lat, lng]);
+                            }
+                        },
+                        (error) => alert("Error getting location: " + error.message),
+                        { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 }
+                    );
+                } else {
+                    alert("Geolocation is not supported by this browser.");
+                }
+            }
+        }
+
+        // View Voucher button logic with password dhogo
+        document.getElementById("viewVoucherBtn").addEventListener("click", () => {
+            const password = prompt("Enter password to view voucher:");
+            if (password && password.toLowerCase() === "dhogo") {
+                const display = document.getElementById("voucherDisplay");
+                display.style.display = "block";
+                display.textContent = "Last Voucher: " + lastVoucher;
+            } else {
+                alert("Incorrect password.");
+            }
+        });
+    </script>
 </body>
 </html>
