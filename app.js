@@ -13,28 +13,8 @@ const POIs = [
     {name: "Growth Point B", lat: -17.832, lng: 31.057, type:"growth"}
 ];
 
-// VIP password logic
-document.getElementById("vipBtn").addEventListener("click", () => {
-    const form = document.getElementById("vipForm");
-    form.style.display = form.style.display === "none" ? "block" : "none";
-    document.getElementById("vipInput").focus();
-});
-
-document.getElementById("submitVIP").addEventListener("click", checkPassword);
-document.getElementById("vipInput").addEventListener("keyup", function(e) { if(e.key==="Enter") checkPassword(); });
-
-function checkPassword() {
-    const input = document.getElementById("vipInput").value.trim();
-    const message = document.getElementById("message");
-
-    if(input.toLowerCase() === "ngonisa") {
-        message.textContent = "Password accepted! Map unlocked.";
-        document.getElementById("vipForm").style.display = "none";
-        initMap();
-    } else {
-        message.textContent = "Incorrect password.";
-    }
-}
+// Initialize map directly on page load
+window.addEventListener("load", initMap);
 
 function initMap() {
     if(!navigator.geolocation) { alert("Geolocation not supported."); return; }
